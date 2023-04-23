@@ -1,0 +1,155 @@
+.keyboard-container {
+  --keycap-size: 40px;
+  --keycap-gap: 1px;
+  --keycap-color: rgb(222, 222, 222);
+  --keycap-color-active: rgb(194, 194, 194);
+  --keycap-color-capson: #ffb727;
+  --keycap-radius: 4px;
+  --pinky-color: #e7c8cd;
+  --ring-color: #dcc499;
+  --middle-color: #dedea4;
+  --index-color: #d8eeb7;
+  --keycap-border: 2px solid #00000050;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  width: calc(var(--keycap-size) * 15);
+  gap: var(--keycap-gap);
+  user-select: none;
+
+  .disabled-keyboard-overlay {
+    position: absolute;
+    inset: 0 0 0 0;
+    background-color: #00000032;
+    z-index: 500;
+  }
+
+  .row {
+    display: flex;
+    /* justify-content: space-between; */
+
+    .keycap-container {
+      width: calc(var(--keycap-size) * var(--key-size));
+      height: var(--keycap-size);
+      padding: var(--keycap-gap);
+      overflow: hidden;
+
+      .keycap {
+        height: 100%;
+        line-height: calc(var(--keycap-size) - var(--keycap-gap) * 2);
+        text-align: center;
+        border-radius: var(--keycap-radius);
+        border-bottom: var(--keycap-border);
+        background-color: var(--keycap-color);
+        transition: background-color 100ms ease-out;
+
+        &.pinky {
+          --keycap-color: var(--pinky-color);
+        }
+
+        &.ring {
+          --keycap-color: var(--ring-color);
+        }
+
+        &.middle {
+          --keycap-color: var(--middle-color);
+        }
+
+        &.index {
+          --keycap-color: var(--index-color);
+        }
+      }
+
+      &.pressed {
+        .keycap {
+          --keycap-border: none;
+          transform: translateY(2px);
+        }
+      }
+
+      &.iso-enter {
+        position: relative;
+        overflow: unset;
+
+        .keycap {
+          position: absolute;
+          display: block;
+          inset: var(--keycap-gap) var(--keycap-gap) calc(var(--keycap-size) * -1) var(--keycap-gap);
+          border: none;
+          background-color: transparent;
+
+          .iso-enter-top {
+            width: 100%;
+            height: calc(var(--keycap-size) - var(--keycap-gap) * 2);
+            background-color: var(--keycap-color);
+            border-radius: var(--keycap-radius) var(--keycap-radius) 0 var(--keycap-radius);
+            z-index: 200;
+
+            .enter-border {
+              width: calc(15% + var(--keycap-gap) * 2);
+              height: 100%;
+              border-radius: 0 var(--keycap-radius);
+              border-bottom: var(--keycap-border);
+            }
+          }
+
+          .iso-enter-bottom {
+            height: calc(var(--keycap-size) + var(--keycap-gap));
+            margin-left: calc(15% + var(--keycap-gap) * 2);
+            background-color: var(--keycap-color);
+            border-radius: 0 0 var(--keycap-radius) var(--keycap-radius);
+            border-bottom: var(--keycap-border);
+          }
+        }
+      }
+
+      &.hidden {
+        opacity: 0;
+      }
+
+      &.caps-lock-on {
+        .keycap {
+          background-color: var(--keycap-color-capson);
+        }
+      }
+    }
+  }
+
+  &.iso {
+    .row {
+      .Enter-1 {
+        position: relative;
+
+        .keycap {
+          background-color: transparent;
+        }
+
+        .Enter {}
+
+        &.pressed {
+          background-color: transparent;
+
+          .Enter {
+
+            .top,
+            .bottom {
+              background-color: var(--keycap-color-active);
+            }
+          }
+        }
+      }
+
+      .Enter-2 {
+        opacity: 0;
+      }
+    }
+  }
+}
+
+.hidden-input {
+  position: absolute;
+  inset: 0 0 0 0;
+  visibility: hidden;
+}

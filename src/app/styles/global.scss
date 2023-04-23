@@ -1,0 +1,14 @@
+.app {
+  --primary-color: #e9d758;
+  --light-gray: #d3d4d9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+
+.app-header {
+  display: flex;
+  gap: 16px;
+}

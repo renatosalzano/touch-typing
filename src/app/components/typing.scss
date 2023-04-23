@@ -1,0 +1,9 @@
+.typing-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  .keyboard-settings {
+    display: flex;
+    gap: 8px;
+  }
+}

@@ -1,0 +1,42 @@
+.select-container {
+  position: relative;
+  width: 160px;
+  font-size: 14px;
+  z-index: 1000;
+
+  caret-color: transparent;
+  user-select: none;
+  cursor: default;
+
+  .select-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: none;
+    outline: none;
+    background-color: var(--light-gray);
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .list-container {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    .options {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 0;
+      margin: 0;
+      background-color: var(--light-gray);
+      list-style: none;
+
+      .option {
+        padding: 4px 8px;
+      }
+    }
+  }
+}
