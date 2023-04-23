@@ -1,35 +1,27 @@
 import { useEffect } from "react";
 import { Key } from "../classes/Key";
 import { layouts } from "../keyboard-layouts/layouts";
-import { createStore, useActions, useGetters } from "./core/react-store";
+import { createStore } from "./core/react-store";
 
 export interface TypingStore {
-  data: {
-    currentKeyboard: string,
-    standard: "ISO" | 'ANSI',
-    layout: any[],
-    keyboardKeys: { Key: Key, size: number }[][],
-    fingerPosition: boolean;
-  },
-  actions: {
-    setKeyboardLayout(): void;
-    setKeyboardKeys(keyboardKeys: any): { Key: Key, size: number }[][]
-  },
-  getters: {
-    getLayout(): any[]
-  }
+  currentKeyboard: string,
+  standard: "ISO" | 'ANSI',
+  layout: any[],
+  keyboardKeys: { Key: Key, size?: number }[][],
+  fingerPosition: boolean;
 }
 
 export const typingStore = createStore({
-  data: {
+  store: {
     currentKeyboard: 'ANSI - United States QWERTY',
     standard: 'ANSI',
     layout: layouts.ANSI['United States QWERTY'],
     keyboardKeys: [],
-  },
+    fingerPosition: false
+  } as TypingStore,
   actions: {
     setKeyboardLayout(layout: string) {
-      const [standard, lang] = layout.split(' - ');
+      const [standard, lang] = layout.split(' - ') as ['ISO', 'ANSI', string];
       this.currentKeyboard = layout;
       this.standard = standard;
       this.layout = (layouts as any)[standard][lang]
@@ -44,7 +36,7 @@ export const typingStore = createStore({
         output.push([] as any[]);
         row.forEach(({ k, size }, index) => {
           const key = new Key(k, rowIndex, index, this.standard);
-          this.keyboardKeys[rowIndex].push(key);
+          this.keyboardKeys[rowIndex].push({ Key: key, size });
           output[rowIndex].push({ Key: key, size });
         });
       });
@@ -57,16 +49,4 @@ export const typingStore = createStore({
     },
 
   }
-})
-
-export const useTypingAction = (): TypingStore['actions'] => {
-  const actions = useActions(typingStore);
-  return actions as TypingStore['actions']
-}
-
-type TGetters = (keyof TypingStore['getters'] | keyof TypingStore['data'])[]
-
-export const useTypingGetters = (getters: TGetters) => {
-  const _getters = useGetters(typingStore, getters);
-  return [..._getters]
-}
+});

@@ -1,10 +1,10 @@
 import { FC } from "react";
-import { useActions } from "../../store/core/react-store";
 import { typingStore } from "../../store/typingStore";
 import { Select } from "../input/Select";
 
 export const KeyboardSettings: FC<any> = ({ layouts, setKeyboardSettings }) => {
-  const { setKeyboardLayout } = useActions(typingStore)
+  const { setKeyboardLayout } = typingStore.useActions();
+  const { currentKeyboard } = typingStore.useGetters(["currentKeyboard"]);
   const onToggleFingerPosition = () => {
     setKeyboardSettings((prev: any) => ({
       ...prev,
@@ -13,14 +13,14 @@ export const KeyboardSettings: FC<any> = ({ layouts, setKeyboardSettings }) => {
   };
   const onChange = (name: string, newValue: string) => {
     setKeyboardSettings((prev: any) => ({ ...prev, [name]: newValue }));
-    setKeyboardLayout(newValue)
+    setKeyboardLayout(newValue);
   };
   return (
     <div className="keyboard-settings">
       <Select
         name="currentLayout"
         options={layouts}
-        defaultValue="ANSI - United States QWERTY"
+        defaultValue={currentKeyboard}
         onChange={onChange}
       />
 

@@ -1,5 +1,6 @@
-import { FC, HTMLProps, ReactElement, useMemo, useState } from "react";
+import { FC, HTMLProps, ReactElement, useMemo, useRef, useState } from "react";
 import "./input-style.scss";
+import { useOutsideClick } from "../../hooks/useOutsideClick";
 
 type TSelectChangeProps =
   | {
@@ -21,6 +22,11 @@ interface IProps {
   };
 }
 
+type options = {
+  label: string;
+  value: any;
+}[];
+
 export const Select: FC<IProps & TSelectChangeProps> = ({
   name,
   defaultValue = undefined,
@@ -35,6 +41,10 @@ export const Select: FC<IProps & TSelectChangeProps> = ({
 
   const toggleList = () => {
     setState((prev) => ({ ...prev, openList: !prev.openList }));
+  };
+
+  const closeList = () => {
+    setState((prev) => ({ ...prev, openList: false }));
   };
 
   const onSelect = (value: any) => {
@@ -70,22 +80,34 @@ export const Select: FC<IProps & TSelectChangeProps> = ({
       />
       <div className="list-container">
         {openList && (
-          <ul role="menu" className="options">
-            {optionsList.map(({ label, value }, index) => {
-              return (
-                <Option
-                  key={`${label}-${index}`}
-                  value={value}
-                  onSelect={onSelect}
-                >
-                  {label}
-                </Option>
-              );
-            })}
-          </ul>
+          <OptionList
+            list={optionsList}
+            onSelect={onSelect}
+            closeList={closeList}
+          />
         )}
       </div>
     </div>
+  );
+};
+
+const OptionList: FC<{
+  list: options;
+  onSelect(value: any): void;
+  closeList(): void;
+}> = ({ list, onSelect, closeList }) => {
+  const listRef = useOutsideClick<HTMLUListElement>(closeList);
+
+  return (
+    <ul ref={listRef} role="menu" className="options">
+      {list.map(({ label, value }, index) => {
+        return (
+          <Option key={`${label}-${index}`} value={value} onSelect={onSelect}>
+            {label}
+          </Option>
+        );
+      })}
+    </ul>
   );
 };
 
