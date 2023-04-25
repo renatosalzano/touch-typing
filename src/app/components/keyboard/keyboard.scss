@@ -1,4 +1,5 @@
 .keyboard-container {
+  --case-size: 8px;
   --keycap-size: 40px;
   --keycap-gap: 1px;
   --keycap-color: rgb(222, 222, 222);
@@ -14,9 +15,14 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 600px;
 
-  width: calc(var(--keycap-size) * 15);
   gap: var(--keycap-gap);
+  padding: var(--case-size);
+  border-radius: 5px;
+  background-color: #5d5d5d;
+  overflow: hidden;
   user-select: none;
 
   .disabled-keyboard-overlay {
@@ -28,12 +34,15 @@
 
   .row {
     display: flex;
+    flex-shrink: 2;
     /* justify-content: space-between; */
 
     .keycap-container {
+      display: block;
       width: calc(var(--keycap-size) * var(--key-size));
       height: var(--keycap-size);
       padding: var(--keycap-gap);
+      font-size: calc(var(--keycap-size) / 3);
       overflow: hidden;
 
       .keycap {
@@ -76,7 +85,8 @@
         .keycap {
           position: absolute;
           display: block;
-          inset: var(--keycap-gap) var(--keycap-gap) calc(var(--keycap-size) * -1) var(--keycap-gap);
+          inset: var(--keycap-gap) var(--keycap-gap)
+            calc(var(--keycap-size) * -1) var(--keycap-gap);
           border: none;
           background-color: transparent;
 
@@ -84,7 +94,8 @@
             width: 100%;
             height: calc(var(--keycap-size) - var(--keycap-gap) * 2);
             background-color: var(--keycap-color);
-            border-radius: var(--keycap-radius) var(--keycap-radius) 0 var(--keycap-radius);
+            border-radius: var(--keycap-radius) var(--keycap-radius) 0
+              var(--keycap-radius);
             z-index: 200;
 
             .enter-border {
@@ -116,35 +127,18 @@
       }
     }
   }
+}
 
-  &.iso {
-    .row {
-      .Enter-1 {
-        position: relative;
-
-        .keycap {
-          background-color: transparent;
-        }
-
-        .Enter {}
-
-        &.pressed {
-          background-color: transparent;
-
-          .Enter {
-
-            .top,
-            .bottom {
-              background-color: var(--keycap-color-active);
-            }
-          }
-        }
-      }
-
-      .Enter-2 {
-        opacity: 0;
-      }
-    }
+.settings-key {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--keycap-radius);
+  cursor: pointer;
+  .icon {
+    padding: 12%;
+  }
+  &.active {
+    background-color: var(--primary-color);
   }
 }
 

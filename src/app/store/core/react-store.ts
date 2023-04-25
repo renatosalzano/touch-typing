@@ -1,4 +1,4 @@
-import { isEqual } from "lodash";
+import { cloneDeep, isEqual } from "lodash";
 import {
   FC,
   ReactNode,
@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from "react";
@@ -74,6 +75,7 @@ function each<T extends object>(
 
 class Store<S, A extends Actions, G extends Getters> {
   store: object;
+  prevStore: object = {};
   actions: Actions = {};
   getters: Getters = {};
   actionsData: ActionsData = {};
@@ -83,11 +85,17 @@ class Store<S, A extends Actions, G extends Getters> {
 
   constructor({ store, actions, getters }: ContextStore<S, A, G>) {
     this.store = store as object;
+    this.prevStore = cloneDeep(store as object);
     each<Actions>(actions, (action, actionName) => {
       this.actions[actionName] = (...args: any[]) => {
         const bindAction = action.bind(this.store);
         const returnAction = bindAction(...args);
-        this.updateGetters(actionName);
+        if (!isEqual(this.prevStore, this.store)) {
+          action.bind(this.prevStore)(...args);
+          this.updateGetters(actionName);
+        } else {
+          console.log("same");
+        }
         return returnAction;
       };
       this.actionsData[actionName] = {
@@ -175,8 +183,7 @@ export function createStore<
   const useGetters = (getters: GettersKey<S, G>[]) => {
     const context = useContext(StoreContext);
 
-    const [, forceRender] = useState({});
-    const update = () => forceRender(() => {});
+    const [, forceRender] = useReducer((x) => x + 1, 0);
 
     const getValues = () => {
       const values: any = {};
@@ -192,9 +199,10 @@ export function createStore<
 
     const updateFunc = (key: string) => {
       const updatedValue = context.getters[key]();
-      if (gettersValue.current[key] !== updatedValue) {
+      /* console.log(gettersValue.current[key], updatedValue); */
+      if (!isEqual(gettersValue.current[key], updatedValue)) {
         gettersValue.current[key] = updatedValue;
-        update();
+        forceRender();
       }
     };
 

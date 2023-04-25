@@ -1,6 +1,17 @@
-import { FC, HTMLProps, ReactElement, useMemo, useRef, useState } from "react";
+import {
+  FC,
+  HTMLProps,
+  ReactElement,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "./input-style.scss";
 import { useOutsideClick } from "../../hooks/useOutsideClick";
+import { isEqual } from "lodash";
+import { Icon } from "../common/Icon";
+import { useClassName } from "../../hooks/useClassName";
 
 type TSelectChangeProps =
   | {
@@ -34,6 +45,7 @@ export const Select: FC<IProps & TSelectChangeProps> = ({
   onChange,
   setOptions = (option) => ({ label: `${option}`, value: option }),
 }) => {
+  const selectData = useRef({ listIsOpen: false }).current;
   const [{ openList, currentValue }, setState] = useState({
     currentValue: defaultValue,
     openList: false,
@@ -49,10 +61,10 @@ export const Select: FC<IProps & TSelectChangeProps> = ({
 
   const onSelect = (value: any) => {
     setState((prev) => {
-      if (value !== currentValue) {
-        return { openList: false, currentValue: value };
+      if (isEqual(value, currentValue)) {
+        return { ...prev, openList: false };
       }
-      return prev;
+      return { openList: false, currentValue: value };
     });
     if (name !== undefined) {
       onChange(name, value);
@@ -70,14 +82,15 @@ export const Select: FC<IProps & TSelectChangeProps> = ({
   }, [options]);
 
   return (
-    <div className="select-container">
-      <input
-        className="select-input"
-        type="text"
-        value={currentValue}
-        onClick={toggleList}
-        readOnly={true}
-      />
+    <div className="select select-container">
+      <div className="select-placeholder">
+        <strong>{currentValue}</strong>
+        {!openList && <div className="select-trigger" onClick={toggleList} />}
+        <Icon
+          icon="arrow-up"
+          {...useClassName("drop-icon", { down: !openList })}
+        />
+      </div>
       <div className="list-container">
         {openList && (
           <OptionList

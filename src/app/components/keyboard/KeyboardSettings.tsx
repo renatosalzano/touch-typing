@@ -1,30 +1,52 @@
-import { FC } from "react";
-import { typingStore } from "../../store/typingStore";
+import { FC, useMemo, useState } from "react";
 import { Select } from "../input/Select";
+import { Icon } from "../common/Icon";
+import { Button } from "../input/Button";
+import "./KeyboardSettings.scss";
+import { getLayouts } from "../../keyboard-layouts/layouts";
+import { ToggleButtons } from "../input/ToggleButtons";
+import { keyboardStore } from "./keyboardStore";
 
-export const KeyboardSettings: FC<any> = ({ layouts, setKeyboardSettings }) => {
-  const { setKeyboardLayout } = typingStore.useActions();
-  const { currentKeyboard } = typingStore.useGetters(["currentKeyboard"]);
-  const onToggleFingerPosition = () => {
-    setKeyboardSettings((prev: any) => ({
-      ...prev,
-      fingerPosition: !prev.fingerPosition,
-    }));
-  };
+export const KeyboardSettings: FC = () => {
+  const { setKeyboardLayout, setFingerPlacement } = keyboardStore.useActions();
+  const { currentKeyboard, showKeyboardSettings } = keyboardStore.useGetters([
+    "currentKeyboard",
+    "showKeyboardSettings",
+  ]);
+  const [settings, setSettings] = useState(false);
+
   const onChange = (name: string, newValue: string) => {
-    setKeyboardSettings((prev: any) => ({ ...prev, [name]: newValue }));
     setKeyboardLayout(newValue);
   };
+
+  const toggleSettings = () => {
+    setSettings((prev) => !prev);
+  };
+
   return (
     <div className="keyboard-settings">
-      <Select
-        name="currentLayout"
-        options={layouts}
-        defaultValue={currentKeyboard}
-        onChange={onChange}
-      />
-
-      <button onClick={onToggleFingerPosition}>Finger position</button>
+      {/* <Button className="settings-button" onClick={toggleSettings}>
+        <Icon icon="settings" />
+      </Button> */}
+      {showKeyboardSettings && (
+        <div className="settings">
+          <span>
+            <Icon icon="keyboard" />
+            Layout
+          </span>
+          <Select
+            name="currentLayout"
+            options={getLayouts()}
+            defaultValue={currentKeyboard}
+            onChange={onChange}
+          />
+          <span>
+            <Icon icon="touch" />
+            Touch Typing Finger Placement
+          </span>
+          <ToggleButtons onToggle={setFingerPlacement} />
+        </div>
+      )}
     </div>
   );
 };

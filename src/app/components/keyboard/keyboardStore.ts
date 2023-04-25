@@ -1,16 +1,6 @@
-import { useEffect } from "react";
-import { Key } from "../classes/Key";
-import { layouts } from "../keyboard-layouts/layouts";
-import { createStore } from "./core/react-store";
-
-export interface TypingStore {
-  currentKeyboard: string;
-  standard: "ISO" | "ANSI";
-  layout: any[];
-  keyboardKeys: { Key: Key; size?: number }[][];
-  showKeyboardSettings: boolean;
-  fingerPlacement: boolean;
-}
+import { Key } from "../../classes/Key";
+import { layouts } from "../../keyboard-layouts/layouts";
+import { createStore } from "../../store/core/react-store";
 
 function setKeyboardKeys(
   keyboardKeys: { k: string; size?: number }[][],
@@ -27,15 +17,21 @@ function setKeyboardKeys(
   return output;
 }
 
-export const typingStore = createStore({
+export function isSpecialKey(code: string) {
+  return /(Control|Meta|Shift|Alt|Caps|Enter|Backspace|Space|Option|Tab)/i.test(
+    code
+  );
+}
+
+export const keyboardStore = createStore({
   store: {
     currentKeyboard: "ANSI - United States QWERTY",
-    standard: "ANSI",
+    standard: "ANSI" as keyof typeof layouts,
     layout: layouts.ANSI["United States QWERTY"],
     keyboardKeys: setKeyboardKeys(layouts.ANSI["United States QWERTY"], "ANSI"),
     showKeyboardSettings: false,
     fingerPlacement: false,
-  } as TypingStore,
+  },
   actions: {
     setKeyboardLayout(layout: string) {
       const [standard, lang] = layout.split(" - ") as ["ISO", "ANSI", string];
@@ -54,8 +50,8 @@ export const typingStore = createStore({
     },
   },
   getters: {
-    getLayout() {
-      return this.layout;
+    getKeyboardKeys() {
+      return this.keyboardKeys;
     },
   },
 });

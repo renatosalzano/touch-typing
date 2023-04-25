@@ -1,14 +1,35 @@
 .app {
   --primary-color: #e9d758;
   --light-gray: #d3d4d9;
+  font-family: monospace;
 }
 
 * {
   box-sizing: border-box;
 }
 
-
 .app-header {
   display: flex;
   gap: 16px;
+}
+
+.app-content {
+  display: grid;
+  grid-template-columns: auto minmax(auto, 800px) auto;
+  grid-template-areas: ". content .";
+
+  width: 100%;
+
+  .content {
+    grid-area: content;
+    width: 100%;
+    overflow: hidden;
+  }
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+  max-width: 50px;
+  max-height: 50px;
 }
