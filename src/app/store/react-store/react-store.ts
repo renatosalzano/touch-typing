@@ -230,8 +230,8 @@ export function createStore<
 
   const useWatch = (
     watchers: {
-      [K in keyof G]?: (newValue?: ReturnGetterType<G[K]>) => void;
-    } & { [K in keyof S]?: (newValue?: S[K]) => void }
+      [K in keyof G]?: (newValue: ReturnGetterType<G[K]>) => void;
+    } & { [K in keyof S]?: (newValue: S[K]) => void }
   ) => {
     type Watchers = { [key: string]: (value?: any) => void };
 

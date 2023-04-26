@@ -1,14 +1,15 @@
 import { FC, useState } from "react";
-import { Keyboard } from "./keyboard/Keyboard";
-import { KeyboardSettings } from "./keyboard/KeyboardSettings";
-import { keyboardStore } from "./keyboard/keyboardStore";
+import { Keyboard } from "./Keyboard";
+import { KeyboardSettings } from "./KeyboardSettings";
+import { keyboardStore } from "./keyboardStore";
+import "./KeyboardSection.scss";
 
 export const KeyboardSection: FC<{
   isTyping: boolean;
 }> = ({ isTyping }) => {
   return (
     <keyboardStore.Provider>
-      <div className="keyboard-area">
+      <div className="keyboard-section">
         <Keyboard />
         <KeyboardSettings />
       </div>

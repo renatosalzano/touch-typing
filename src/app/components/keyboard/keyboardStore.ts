@@ -1,6 +1,15 @@
 import { Key } from "../../classes/Key";
 import { layouts } from "../../keyboard-layouts/layouts";
-import { createStore } from "../../store/core/react-store";
+import { createStore } from "../../store/react-store/react-store";
+
+type KeyPressed = { [key: string]: boolean };
+
+interface ModifierKeyPressed {
+  Alt: boolean;
+  Shift: boolean;
+  Control: boolean;
+  CapsLock: boolean;
+}
 
 function setKeyboardKeys(
   keyboardKeys: { k: string; size?: number }[][],
@@ -17,7 +26,7 @@ function setKeyboardKeys(
   return output;
 }
 
-export function isSpecialKey(code: string) {
+export function isModifierKey(code: string) {
   return /(Control|Meta|Shift|Alt|Caps|Enter|Backspace|Space|Option|Tab)/i.test(
     code
   );
@@ -31,6 +40,13 @@ export const keyboardStore = createStore({
     keyboardKeys: setKeyboardKeys(layouts.ANSI["United States QWERTY"], "ANSI"),
     showKeyboardSettings: false,
     fingerPlacement: false,
+    keyPressed: {} as KeyPressed,
+    modifierKeyPressed: {
+      Alt: false,
+      Shift: false,
+      Control: false,
+      CapsLock: false,
+    },
   },
   actions: {
     setKeyboardLayout(layout: string) {
@@ -47,6 +63,27 @@ export const keyboardStore = createStore({
     setShowKeyboardSettings(bool?: boolean) {
       if (bool !== undefined) this.showKeyboardSettings = bool;
       else this.showKeyboardSettings = !this.showKeyboardSettings;
+    },
+
+    handleKey(event: KeyboardEvent, keydown: boolean) {
+      if (event.code === "CapsLock" || event.key === "CapsLock") {
+        if (!keydown) return;
+        const capsLockIsActive = event.getModifierState("CapsLock");
+        this.modifierKeyPressed = {
+          ...this.modifierKeyPressed,
+          CapsLock: capsLockIsActive,
+        };
+        return;
+      }
+      const code = isModifierKey(event.code) ? event.code : event.key;
+      if (this.keyPressed[code] === keydown) return;
+      this.keyPressed = { ...this.keyPressed, [code]: keydown };
+      if (isModifierKey(event.code)) {
+        this.modifierKeyPressed = {
+          ...this.modifierKeyPressed,
+          [event.key]: keydown,
+        };
+      }
     },
   },
   getters: {

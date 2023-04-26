@@ -3,7 +3,7 @@ import { useWindowResize } from "../../hooks/useWindowResize";
 import { CommonKey } from "./keys/CommonKey";
 import { EnterKey } from "./keys/EnterKey";
 import { FnKey } from "./keys/FnKey";
-import { isSpecialKey, keyboardStore } from "./keyboardStore";
+import { isModifierKey, keyboardStore } from "./keyboardStore";
 import "./keyboard.scss";
 import { Char } from "../../classes/Char";
 import { ModifiersKey } from "./keys/ModifierKey";
@@ -12,14 +12,12 @@ import { useKeyboard } from "./useKeyboard";
 export const Keyboard: FC = () => {
   const keyboardRef = useRef<HTMLDivElement>(null);
 
-  const { standard, getKeyboardKeys, fingerPlacement } =
-    keyboardStore.useGetters([
-      "standard",
-      "getKeyboardKeys",
-      "fingerPlacement",
-    ]);
+  const { standard, getKeyboardKeys } = keyboardStore.useGetters([
+    "standard",
+    "getKeyboardKeys",
+  ]);
 
-  const { currentKeypressed, modifiersKeyPressed } = useKeyboard();
+  useKeyboard();
 
   useWindowResize(() => {
     const node = keyboardRef.current;
@@ -48,9 +46,6 @@ export const Keyboard: FC = () => {
                 rowIndex={index}
                 isEnter={Key.key === "Enter"}
                 isoLayout={standard === "ISO"}
-                fingerPlacement={fingerPlacement}
-                currentKeypressed={currentKeypressed}
-                modifiersKeyPressed={modifiersKeyPressed}
               />
             );
           })}
@@ -66,17 +61,14 @@ const KeyboardKey: FC<{
   size?: number;
   isEnter?: boolean;
   rowIndex: number;
-  currentKeypressed: { [key: string]: boolean };
-  modifiersKeyPressed: { [key: string]: boolean };
-  fingerPlacement: boolean;
   isoLayout: boolean;
 }> = ({ _key, ...props }) => {
   const isAlphabetKey = useMemo(() => {
-    return /[A-Z]/i.test(_key) && !isSpecialKey(_key);
+    return /[A-Z]/i.test(_key) && !isModifierKey(_key);
   }, [_key]);
 
   const isCharKey = useMemo(() => {
-    return !isSpecialKey(_key);
+    return !isModifierKey(_key);
   }, [_key]);
 
   switch (_key) {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { keyboardStore } from "./keyboardStore";
 
 export function isModifierKey(code: string) {
   return /(Control|Meta|Shift|Alt|Caps|Enter|Backspace|Space|Option|Tab)/i.test(
@@ -7,7 +8,7 @@ export function isModifierKey(code: string) {
 }
 
 export const useKeyboard = () => {
-  const [currentKeypressed, setCurrentKey] = useState<{
+  /* const [currentKeypressed, setCurrentKey] = useState<{
     [key: string]: boolean;
   }>({});
 
@@ -34,7 +35,8 @@ export const useKeyboard = () => {
         [event.key]: keydown,
       }));
     }
-  };
+  }; */
+  const { handleKey } = keyboardStore.useActions();
 
   const handleKeydown = useCallback((event: KeyboardEvent) => {
     handleKey(event, true);
@@ -52,5 +54,5 @@ export const useKeyboard = () => {
       window.removeEventListener("keyup", handleKeyup);
     };
   }, [handleKeydown, handleKeyup]);
-  return { currentKeypressed, modifiersKeyPressed };
+  /* return { currentKeypressed, modifiersKeyPressed }; */
 };

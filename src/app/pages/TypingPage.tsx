@@ -1,5 +1,5 @@
 import { FC, useState } from "react";
-import KeyboardSection from "../components/KeyboardSection";
+import KeyboardSection from "../components/keyboard/KeyboardSection";
 import { TypingArea } from "../components/typing-area/TypingArea";
 
 export const TypingPage: FC = () => {

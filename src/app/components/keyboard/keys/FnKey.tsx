@@ -18,7 +18,7 @@ export const FnKey: FC<{} & CommonKeyProps> = ({ ...keyProps }) => {
     >
       <Button
         {...useClassName("settings-key", { active: showKeyboardSettings })}
-        onClick={() => setShowKeyboardSettings(true)}
+        onClick={() => setShowKeyboardSettings()}
       >
         <Icon icon="settings" />
       </Button>

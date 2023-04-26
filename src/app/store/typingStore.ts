@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Key } from "../classes/Key";
 import { layouts } from "../keyboard-layouts/layouts";
-import { createStore } from "./core/react-store";
+import { createStore } from "./react-store/react-store";
 
 export interface TypingStore {
   currentKeyboard: string;

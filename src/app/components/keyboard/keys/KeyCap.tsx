@@ -1,6 +1,7 @@
-import { FC, ReactNode, useEffect, useMemo, useRef } from "react";
+import { FC, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useClassName } from "../../../hooks/useClassName";
 import { Char } from "../../../classes/Char";
+import { keyboardStore } from "../keyboardStore";
 
 interface KeyCapProps {
   char: Char;
@@ -9,8 +10,6 @@ interface KeyCapProps {
   size?: number;
   rowIndex: number;
   currentKey: string;
-  currentKeypressed: { [key: string]: boolean };
-  fingerPlacement: boolean;
   forcePressed?: boolean;
   children?: ReactNode;
 }
@@ -26,13 +25,20 @@ export const KeyCap: FC<KeyCapProps> = ({
   isEnter = false,
   isoLayout = false,
   currentKey,
-  currentKeypressed,
-  fingerPlacement,
   forcePressed = false,
   rowIndex,
   children,
 }) => {
   const keyCapRef = useRef<HTMLDivElement>(null);
+  const { fingerPlacement } = keyboardStore.useGetters(["fingerPlacement"]);
+  const [keyPressed, setState] = useState(false);
+  keyboardStore.useWatch({
+    keyPressed(keys) {
+      if (!!keys[currentKey] !== keyPressed) {
+        setState(() => !!keys[currentKey]);
+      }
+    },
+  });
   const keyCapsClassNameCondition = useMemo(() => {
     if (char.finger) return { [char.finger]: char.finger && fingerPlacement };
     return {};
@@ -46,7 +52,7 @@ export const KeyCap: FC<KeyCapProps> = ({
 
   const keyCapClass = useClassName(`keycap-container`, {
     hidden: isEnter && isoLayout && rowIndex === 2,
-    pressed: currentKeypressed[currentKey] || forcePressed,
+    pressed: keyPressed || forcePressed,
     "iso-enter": isEnter && isoLayout,
     "caps-lock-on": false,
   });

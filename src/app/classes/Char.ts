@@ -1,4 +1,4 @@
-import { isSpecialKey } from "../components/keyboard/keyboardStore";
+import { isModifierKey } from "../components/keyboard/keyboardStore";
 
 export class Char {
   key: string;
@@ -14,7 +14,7 @@ export class Char {
     charIndex: number,
     standard: string
   ) {
-    if (isSpecialKey(chars)) {
+    if (isModifierKey(chars)) {
       this.key = chars;
     } else {
       this.key = chars[0];
