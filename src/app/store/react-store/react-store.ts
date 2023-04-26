@@ -180,25 +180,29 @@ export function createStore<
     return context.actions as ContextStore<S, A, G>["actions"];
   };
 
-  const useGetters = (getters: GettersKey<S, G>[]) => {
+  const useGetters = <T extends GettersKey<S, G>>(getters: T[]) => {
     const context = useContext(StoreContext);
 
     const [, forceRender] = useReducer((x) => x + 1, 0);
 
+    const _getters = [...getters] as const;
+
     const getValues = () => {
-      const values: any = {};
+      const values = {} as { [K in keyof G]: ReturnGetterType<G[K]> } & {
+        [K in keyof S]: S[K];
+      };
       getters.forEach((key) => {
         const getterName = key as string;
         if (context.getters[getterName])
-          values[getterName] = context.getters[getterName]();
+          values[key] = context.getters[getterName]();
       });
       return values;
     };
 
     const gettersValue = useRef(getValues());
 
-    const updateFunc = (key: string) => {
-      const updatedValue = context.getters[key]();
+    const updateFunc = (key: GettersKey<S, G>) => {
+      const updatedValue = context.getters[key as string]();
       /* console.log(gettersValue.current[key], updatedValue); */
       if (!isEqual(gettersValue.current[key], updatedValue)) {
         gettersValue.current[key] = updatedValue;
@@ -223,9 +227,12 @@ export function createStore<
       };
     }, []);
 
+    type TypeofGettersValue = typeof gettersValue.current;
+    type GettersKeys = (typeof _getters)[number];
+
     return gettersValue.current as {
-      [K in keyof G]: ReturnGetterType<G[K]>;
-    } & { [K in keyof S]: S[K] };
+      [K in GettersKeys]: TypeofGettersValue[K];
+    };
   };
 
   const useWatch = (

@@ -11,12 +11,10 @@ export const CommonKey: FC<
     isCharKey: boolean;
   } & CommonKeyProps
 > = ({ isAlphabetKey, isCharKey, ...keyCapsProps }) => {
-  const { Shift, Alt, Control, CapsLock } = {
-    Shift: false,
-    Alt: false,
-    Control: false,
-    CapsLock: false,
-  };
+  const { modifierKeyPressed } = keyboardStore.useGetters([
+    "modifierKeyPressed",
+  ]);
+  const { Shift, Alt, Control, CapsLock } = modifierKeyPressed;
   const {
     key = "",
     shiftKey = "",
@@ -42,7 +40,15 @@ export const CommonKey: FC<
       default:
         return "";
     }
-  }, [shiftCtrlAltKey, ctrlAltKey, shiftKey, isCharKey, isAlphabetKey, key]);
+  }, [
+    shiftCtrlAltKey,
+    ctrlAltKey,
+    shiftKey,
+    isCharKey,
+    isAlphabetKey,
+    key,
+    modifierKeyPressed,
+  ]);
 
   return (
     <KeyCap {...keyCapsProps} currentKey={renderKey}>
