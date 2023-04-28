@@ -1,9 +1,49 @@
-.typing-container {
+.typing-area-container {
+  position: relative;
+  --font-size: 16px;
+  .input-typing {
+    position: absolute;
+    left: 0;
+    opacity: 0;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.caret-container {
+  position: absolute;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  .keyboard-settings {
-    display: flex;
-    gap: 8px;
+  flex-wrap: wrap;
+  font-size: var(--font-size);
+  color: transparent;
+  .caret {
+    display: block;
+    width: 2px;
+    height: var(--font-size);
+    background-color: black;
+  }
+}
+
+.word-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+
+  .word {
+    .letter {
+      font-size: var(--font-size);
+      &.correct {
+        color: rgb(47, 113, 255);
+      }
+      &.error {
+        color: rgb(255, 47, 47);
+      }
+    }
+  }
+  .spacer {
+    opacity: 0;
+    &::before {
+      font-size: var(--font-size);
+      content: "_";
+    }
   }
 }

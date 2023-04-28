@@ -11,6 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { getActionDependencies } from "./dependencies";
 
 type Actions = { [key: string]: Function };
 type Getters = { [key: string]: Function };
@@ -27,6 +28,7 @@ type ContextStore<
 
 type ActionsData = {
   [key: string]: {
+    dependencies: string[];
     observer: ((newValue?: any) => void)[];
   };
 };
@@ -51,10 +53,16 @@ const getDependencies = (func: Function, type: "action" | "getter") => {
   body.split("this").forEach((str) => {
     if (str.indexOf(".") === 0) {
       const afterThis = `${str.substring(1)}`;
+      if (
+        type === "action" &&
+        ["==", "===", "!==", "!=", ">", "<"].includes(str)
+      ) {
+        return;
+      }
       const lastIndex = afterThis.search(
-        type === "action" ? "=" : /[^a-zA-Z\d]/g
+        type === "action" ? /[?\+\=]|(\[)|(,)|(.push)/g : /[^a-zA-Z\d]/g
       );
-      let dep = afterThis.substring(0, lastIndex);
+      let dep = afterThis.substring(0, lastIndex).trim();
       if (dep.includes(".")) dep = dep.substring(0, dep.indexOf("."));
       if (dep && !dependencies.includes(dep)) {
         dependencies.push(dep.trim());
@@ -90,19 +98,22 @@ class Store<S, A extends Actions, G extends Getters> {
       this.actions[actionName] = (...args: any[]) => {
         const bindAction = action.bind(this.store);
         const returnAction = bindAction(...args);
-        if (!isEqual(this.prevStore, this.store)) {
+        /* TESTING  */
+        if (this.storeHasChange(actionName)) {
           action.bind(this.prevStore)(...args);
           this.updateGetters(actionName);
         } else {
-          console.log("same");
+          /* console.log("same"); */
         }
         return returnAction;
       };
+      getActionDependencies(action);
+      const dependencies = getDependencies(action, "action");
       this.actionsData[actionName] = {
+        dependencies,
         observer: [],
       };
-      const dependecies = getDependencies(action, "action");
-      dependecies.forEach((dependency) => {
+      dependencies.forEach((dependency) => {
         if (this.dependencies[dependency]) {
           this.dependencies[dependency].push(actionName);
         } else {
@@ -155,6 +166,13 @@ class Store<S, A extends Actions, G extends Getters> {
     });
 
     /* console.log(this); */
+  }
+
+  private storeHasChange(actionName: string) {
+    const storeEqual = this.actionsData[actionName].dependencies.every((k) =>
+      isEqual((this.prevStore as any)[k], (this.store as any)[k])
+    );
+    return !storeEqual;
   }
 
   private updateGetters(actionName: string) {
@@ -259,10 +277,9 @@ export function createStore<
 
     const updateFunc = (key: string) => {
       const newValue = context.getters[key]();
-      if (!isEqual(data.values[key], newValue)) {
-        data.watchers[key](newValue);
-        data.values[key] = newValue;
-      }
+      // RISCRIVERE QUESTA CONDIZIONE CHE MI CAUSA PROBLEMI CON GLI ARRAY
+      data.watchers[key](newValue);
+      data.values[key] = newValue;
     };
 
     useEffect(() => {

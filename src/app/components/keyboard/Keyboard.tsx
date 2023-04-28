@@ -4,10 +4,10 @@ import { CommonKey } from "./keys/CommonKey";
 import { EnterKey } from "./keys/EnterKey";
 import { FnKey } from "./keys/FnKey";
 import { isModifierKey, keyboardStore } from "./keyboardStore";
-import "./keyboard.scss";
 import { Char } from "../../classes/Char";
 import { ModifiersKey } from "./keys/ModifierKey";
 import { useKeyboard } from "./useKeyboard";
+import "./keyboard.scss";
 
 export const Keyboard: FC = () => {
   const keyboardRef = useRef<HTMLDivElement>(null);
@@ -33,7 +33,6 @@ export const Keyboard: FC = () => {
 
   return (
     <div ref={keyboardRef} className={`keyboard-container ${standard}`}>
-      {standard}
       {getKeyboardKeys.map((row, index: number) => (
         <div className="row" key={`row-${index}`}>
           {row.map(({ Key, size }, i) => {

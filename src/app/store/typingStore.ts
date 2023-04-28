@@ -1,61 +1,40 @@
-import { useEffect } from "react";
-import { Key } from "../classes/Key";
-import { layouts } from "../keyboard-layouts/layouts";
+import { ChangeEvent } from "react";
 import { createStore } from "./react-store/react-store";
-
-export interface TypingStore {
-  currentKeyboard: string;
-  standard: "ISO" | "ANSI";
-  layout: any[];
-  keyboardKeys: { Key: Key; size?: number }[][];
-  showKeyboardSettings: boolean;
-  fingerPlacement: boolean;
-}
-
-function setKeyboardKeys(
-  keyboardKeys: { k: string; size?: number }[][],
-  standard: string
-) {
-  const output = [] as { Key: Key; size?: number }[][];
-  keyboardKeys.forEach((row, rowIndex) => {
-    output.push([] as any[]);
-    row.forEach(({ k, size }, index) => {
-      const key = new Key(k, rowIndex, index, standard);
-      output[rowIndex].push({ Key: key, size });
-    });
-  });
-  return output;
-}
 
 export const typingStore = createStore({
   store: {
-    currentKeyboard: "ANSI - United States QWERTY",
-    standard: "ANSI",
-    layout: layouts.ANSI["United States QWERTY"],
-    keyboardKeys: setKeyboardKeys(layouts.ANSI["United States QWERTY"], "ANSI"),
-    showKeyboardSettings: false,
-    fingerPlacement: false,
-  } as TypingStore,
+    isTyping: false,
+    currentWords:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec risus ac tortor placerat vulputate eu eu elit.",
+    inputValue: "",
+    invalidIndex: [] as number[],
+    index: 0,
+  },
   actions: {
-    setKeyboardLayout(layout: string) {
-      const [standard, lang] = layout.split(" - ") as ["ISO", "ANSI", string];
-      this.currentKeyboard = layout;
-      this.standard = standard;
-      this.layout = (layouts as any)[standard][lang];
-      this.keyboardKeys = setKeyboardKeys(this.layout, this.standard);
+    setTyping(bool: boolean) {
+      this.isTyping = bool;
     },
-    setFingerPlacement(bool?: boolean) {
-      if (bool !== undefined) this.fingerPlacement = bool;
-      else this.fingerPlacement = !this.fingerPlacement;
+    initWords(words: string) {
+      this.currentWords = words;
     },
-    setShowKeyboardSettings(bool?: boolean) {
-      if (bool !== undefined) this.showKeyboardSettings = bool;
-      else this.showKeyboardSettings = !this.showKeyboardSettings;
+    setInputValue(event: ChangeEvent<HTMLInputElement>) {
+      const value = event.target.value;
+      if (value === this.currentWords[this.index]) {
+        // CORRECT
+        ++this.index;
+        this.inputValue += value;
+      } else {
+        if (!this.invalidIndex.includes(this.index + 1)) {
+          this.invalidIndex.push(this.index + 1);
+        }
+        event.preventDefault();
+      }
     },
   },
   getters: {
-    getLayout() {
-      return this.layout;
+    getWords() {
+      const words = this.currentWords.split(" ");
+      return words;
     },
   },
 });

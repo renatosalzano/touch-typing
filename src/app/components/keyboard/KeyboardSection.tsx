@@ -4,9 +4,7 @@ import { KeyboardSettings } from "./KeyboardSettings";
 import { keyboardStore } from "./keyboardStore";
 import "./KeyboardSection.scss";
 
-export const KeyboardSection: FC<{
-  isTyping: boolean;
-}> = ({ isTyping }) => {
+export const KeyboardSection: FC = () => {
   return (
     <keyboardStore.Provider>
       <div className="keyboard-section">

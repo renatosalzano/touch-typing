@@ -1,0 +1,14 @@
+.keyboard-section {
+  display: grid;
+  grid-template-columns: auto minmax(auto, 600px) auto;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    ". keyboard ."
+    ". settings .";
+  .keyboard-container {
+    grid-area: keyboard;
+  }
+  .keyboard-settings {
+    grid-area: settings;
+  }
+}
