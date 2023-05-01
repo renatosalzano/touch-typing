@@ -14,6 +14,7 @@ export const CommonKey: FC<
   const { modifierKeyPressed } = keyboardStore.useGetters([
     "modifierKeyPressed",
   ]);
+
   const { Shift, Alt, Control, CapsLock } = modifierKeyPressed;
   const {
     key = "",

@@ -2,7 +2,7 @@ import { ChangeEvent } from "react";
 import { createStore } from "./react-store/react-store";
 
 export const typingStore = createStore({
-  store: {
+  data: {
     isTyping: false,
     currentWords:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec risus ac tortor placerat vulputate eu eu elit.",

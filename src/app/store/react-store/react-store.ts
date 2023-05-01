@@ -6,177 +6,108 @@ import {
   createElement,
   useContext,
   useEffect,
-  useMemo,
   useReducer,
   useRef,
   useState,
 } from "react";
-import { getActionDependencies } from "./dependencies";
+import { getDependencies } from "./dependencies";
 
 type Actions = { [key: string]: Function };
 type Getters = { [key: string]: Function };
-
-type ContextStore<
-  S,
-  A extends Actions = Actions,
-  G extends Getters = Getters
-> = {
-  store: S;
-  actions: A & ThisType<S>;
-  getters: G & ThisType<Readonly<S>>; // & {[K in keyof S]?: never};
-};
-
-type ActionsData = {
-  [key: string]: {
-    dependencies: string[];
-    observer: ((newValue?: any) => void)[];
-  };
-};
-
-type GettersData = {
-  [key: string]: {
-    subscribe(getterName: string, callback: (newValue?: any) => void): void;
-    unsubscribe(getterName: string, callback: (newValue?: any) => void): void;
-  };
-};
 
 type GettersKey<S, G extends Getters> = keyof S | keyof G;
 
 type ReturnGetterType<T extends Function> = T extends () => infer R ? R : any;
 
-const getDependencies = (func: Function, type: "action" | "getter") => {
-  const dependencies: string[] = [];
-  const funcString = func.toString();
-  const body = funcString
-    .substring(funcString.indexOf("{") + 1, funcString.lastIndexOf("}"))
-    .trim();
-  body.split("this").forEach((str) => {
-    if (str.indexOf(".") === 0) {
-      const afterThis = `${str.substring(1)}`;
-      if (
-        type === "action" &&
-        ["==", "===", "!==", "!=", ">", "<"].includes(str)
-      ) {
-        return;
-      }
-      const lastIndex = afterThis.search(
-        type === "action" ? /[?\+\=]|(\[)|(,)|(.push)/g : /[^a-zA-Z\d]/g
-      );
-      let dep = afterThis.substring(0, lastIndex).trim();
-      if (dep.includes(".")) dep = dep.substring(0, dep.indexOf("."));
-      if (dep && !dependencies.includes(dep)) {
-        dependencies.push(dep.trim());
-      }
-    }
-  });
-  return dependencies;
+type ContextObject<D, A, G> = {
+  data: D;
+  actions: A & ThisType<D & Readonly<G>>;
+  getters: G & ThisType<Readonly<D>>; // & {[K in keyof S]?: never};
 };
 
-function each<T extends object>(
-  obj: T,
-  callback: (item: T[keyof T], key: string, index?: number) => void
-) {
-  return Object.entries(obj).forEach(([k, v], index) => {
-    callback(v as T[keyof T], k, index);
-  });
-}
-
-class Store<S, A extends Actions, G extends Getters> {
-  store: object;
-  prevStore: object = {};
+class ContextData<D, A extends Actions, G extends Getters> {
+  contextData: { [key: string]: any };
+  currentData = {} as D;
+  previousData: { [key: string]: any };
   actions: Actions = {};
   getters: Getters = {};
-  actionsData: ActionsData = {};
-  gettersData: GettersData = {};
-  dependencies: { [key: string]: string[] } = {};
-  subscription: { [key: string]: string[] } = {};
 
-  constructor({ store, actions, getters }: ContextStore<S, A, G>) {
-    this.store = store as object;
-    this.prevStore = cloneDeep(store as object);
-    each<Actions>(actions, (action, actionName) => {
-      this.actions[actionName] = (...args: any[]) => {
-        const bindAction = action.bind(this.store);
-        const returnAction = bindAction(...args);
-        /* TESTING  */
-        if (this.storeHasChange(actionName)) {
-          action.bind(this.prevStore)(...args);
-          this.updateGetters(actionName);
-        } else {
-          /* console.log("same"); */
-        }
-        return returnAction;
+  observable: { [key: string]: Function[] } = {};
+  dependencies: {
+    action: { [key: string]: string[] };
+    getters: { [key: string]: string[] };
+  } = {
+    action: {},
+    getters: {},
+  };
+
+  constructor({ data, actions, getters }: ContextObject<D, A, G>) {
+    this.contextData = { ...data, ...actions, ...getters };
+    this.previousData = cloneDeep(this.contextData);
+    // ACTIONS
+    Object.entries(actions).forEach(([actionName, action]) => {
+      this.actions[actionName] = (...p: any[]) => {
+        const callAction = action.bind(this.contextData)(...p);
+        this.updateData(actionName);
+        return callAction;
       };
-      getActionDependencies(action);
-      const dependencies = getDependencies(action, "action");
-      this.actionsData[actionName] = {
-        dependencies,
-        observer: [],
-      };
-      dependencies.forEach((dependency) => {
-        if (this.dependencies[dependency]) {
-          this.dependencies[dependency].push(actionName);
-        } else {
-          this.dependencies[dependency] = [actionName];
-        }
-      });
+      const actionDependencies = getDependencies(
+        action,
+        "action",
+        Object.keys(getters)
+      );
+      this.dependencies.action[actionName] = actionDependencies;
     });
 
-    const subscribe = (key: string, callback: () => void) => {
-      this.subscription[key].forEach((actionName) => {
-        this.actionsData[actionName].observer.push(callback);
-      });
-    };
-    const unsubscribe = (key: string, callback: () => void) => {
-      this.subscription[key].forEach((actionName) => {
-        const index = this.actionsData[actionName].observer.indexOf(callback);
-        this.actionsData[actionName].observer.slice(index, 1);
-      });
-    };
+    // GETTERS
+    Object.entries(getters).forEach(([getterName, getter]) => {
+      const gettersDependencies = getDependencies(getter, "getter");
 
-    each<Getters>(getters, (getter, getterName) => {
-      let actionsDependencies: string[] = [];
-      getDependencies(getter, "getter").forEach((dependency) => {
-        if (this.dependencies[dependency]) {
-          actionsDependencies = [...this.dependencies[dependency]];
-        }
-      });
-      this.subscription[getterName] = actionsDependencies;
+      this.getters[getterName] = getter.bind(this.contextData);
 
-      this.getters[getterName] = getter.bind(this.store);
-
-      this.gettersData[getterName] = {
-        subscribe: subscribe.bind(this),
-        unsubscribe: unsubscribe.bind(this),
-      };
+      this.dependencies.getters[getterName] = gettersDependencies;
     });
 
-    each<object>(store as object, (storeValue, storeKey) => {
-      const actionsDependencies = this.dependencies?.[storeKey] || [];
-      this.subscription[storeKey] = [...actionsDependencies];
+    // GENERATE GETTERS FROM STORE
+    Object.keys(data as object).forEach((dataKey) => {
+      const storeGetter = () => (this.contextData as any)[dataKey];
 
-      const storeGetter = () => (this.store as any)[storeKey];
+      this.getters[dataKey] = storeGetter.bind(this.contextData);
 
-      this.getters[storeKey] = storeGetter.bind(this.store);
+      this.dependencies.getters[dataKey] = [dataKey];
 
-      this.gettersData[storeKey] = {
-        subscribe: subscribe.bind(this),
-        unsubscribe: unsubscribe.bind(this),
-      };
+      // INIT OBSERVABLE
+      this.observable[dataKey] = [];
     });
 
-    /* console.log(this); */
+    console.log(this);
   }
 
-  private storeHasChange(actionName: string) {
-    const storeEqual = this.actionsData[actionName].dependencies.every((k) =>
-      isEqual((this.prevStore as any)[k], (this.store as any)[k])
-    );
-    return !storeEqual;
+  private updateData(actionName: string) {
+    let dataEqual = true;
+
+    this.dependencies.action[actionName].forEach((dep) => {
+      if (!isEqual(this.contextData[dep], this.previousData[dep])) {
+        dataEqual = false;
+        this.previousData[dep] = cloneDeep(this.contextData[dep]);
+        // passare il valore aggiornato direttamente ai getters
+        this.observable[dep].forEach((update) => update());
+      }
+    });
+    return !dataEqual;
   }
 
-  private updateGetters(actionName: string) {
-    this.actionsData[actionName].observer.forEach((u) => u());
+  subscribe(getterName: string, callback: (...p: any[]) => void) {
+    this.dependencies.getters[getterName].forEach((dep) => {
+      this.observable[dep].push(callback);
+    });
+  }
+
+  unsubscribe(getterName: string, callback: () => void) {
+    this.dependencies.getters[getterName].forEach((dep) => {
+      const index = this.observable[dep].indexOf(callback);
+      this.observable[dep].slice(index, 1);
+    });
   }
 }
 
@@ -184,18 +115,18 @@ export function createStore<
   S,
   A extends Actions = Actions,
   G extends Getters = Getters
->(initStore: ContextStore<S, A, G>) {
-  const _initStore = new Store(initStore);
+>(contextData: ContextObject<S, A, G>) {
+  const _contextData = new ContextData(contextData);
 
-  const StoreContext = createContext(_initStore);
+  const StoreContext = createContext(_contextData);
   const StoreProvider: FC<{ children: ReactNode }> = ({ children }) => {
-    const value = useRef(_initStore).current;
+    const value = useRef(_contextData).current;
     return createElement(StoreContext.Provider, { value }, children);
   };
 
   const useActions = () => {
     const context = useContext(StoreContext);
-    return context.actions as ContextStore<S, A, G>["actions"];
+    return context.actions as ContextObject<S, A, G>["actions"];
   };
 
   const useGetters = <T extends GettersKey<S, G>>(getters: T[]) => {
@@ -221,26 +152,19 @@ export function createStore<
 
     const updateFunc = (key: GettersKey<S, G>) => {
       const updatedValue = context.getters[key as string]();
-      /* console.log(gettersValue.current[key], updatedValue); */
-      if (!isEqual(gettersValue.current[key], updatedValue)) {
-        gettersValue.current[key] = updatedValue;
-        forceRender();
-      }
+      gettersValue.current[key] = updatedValue;
+      forceRender();
     };
 
     useEffect(() => {
       getters.forEach((key) => {
         const getterName = key as string;
-        context.gettersData[getterName].subscribe(getterName, () =>
-          updateFunc(getterName)
-        );
+        context.subscribe(getterName, () => updateFunc(getterName));
       });
       return () => {
         getters.forEach((key) => {
           const getterName = key as string;
-          context.gettersData[getterName].unsubscribe(getterName, () =>
-            updateFunc(getterName)
-          );
+          context.unsubscribe(getterName, () => updateFunc(getterName));
         });
       };
     }, []);
@@ -290,11 +214,11 @@ export function createStore<
 
     useEffect(() => {
       Object.keys(data.watchers).forEach((key) => {
-        context.gettersData[key].subscribe(key, () => updateFunc(key));
+        context.subscribe(key, () => updateFunc(key));
       });
       return () => {
         Object.keys(data.watchers).forEach((key) => {
-          context.gettersData[key].unsubscribe(key, () => updateFunc(key));
+          context.unsubscribe(key, () => updateFunc(key));
         });
       };
     }, []);

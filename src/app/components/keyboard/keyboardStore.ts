@@ -33,7 +33,7 @@ export function isModifierKey(code: string) {
 }
 
 export const keyboardStore = createStore({
-  store: {
+  data: {
     currentKeyboard: "ANSI - United States QWERTY",
     standard: "ANSI" as keyof typeof layouts,
     layout: layouts.ANSI["United States QWERTY"],
@@ -87,6 +87,9 @@ export const keyboardStore = createStore({
     },
   },
   getters: {
+    test() {
+      return "test";
+    },
     getKeyboardKeys() {
       return this.keyboardKeys;
     },
