@@ -50,3 +50,22 @@ export const KeyboardSettings: FC = () => {
     </div>
   );
 };
+
+/* const TestWatchers = () => {
+
+  const { fingerPlacement } = keyboardStore.useGetters([
+    "fingerPlacement",
+  ]);
+
+  keyboardStore.useWatch(
+    {
+      keyPressed() {
+        console.log(fingerPlacement)
+      },
+    },
+    []
+  );
+
+  return <div>TEST</div>
+
+} */

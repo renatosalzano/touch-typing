@@ -38,7 +38,8 @@ export const KeyCap: FC<KeyCapProps> = ({
         setState(() => !!keys[currentKey]);
       }
     },
-  });
+  }, [keyPressed]);
+
   const keyCapsClassNameCondition = useMemo(() => {
     if (char.finger) return { [char.finger]: char.finger && fingerPlacement };
     return {};

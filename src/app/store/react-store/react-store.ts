@@ -1,19 +1,24 @@
 import { cloneDeep, isEqual } from "lodash";
 import {
+  DependencyList,
   FC,
   ReactNode,
   createContext,
   createElement,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
   useRef,
   useState,
 } from "react";
 import { getDependencies } from "./dependencies";
 
+type MapGetters = { [key: string]: () => any };
+
 type Actions = { [key: string]: Function };
-type Getters = { [key: string]: Function };
+type Getters<T extends MapGetters = MapGetters> = { [K in keyof T]: T[K] };
 
 type GettersKey<S, G extends Getters> = keyof S | keyof G;
 
@@ -27,7 +32,6 @@ type ContextObject<D, A, G> = {
 
 class ContextData<D, A extends Actions, G extends Getters> {
   contextData: { [key: string]: any };
-  currentData = {} as D;
   previousData: { [key: string]: any };
   actions: Actions = {};
   getters: Getters = {};
@@ -37,26 +41,27 @@ class ContextData<D, A extends Actions, G extends Getters> {
     action: { [key: string]: string[] };
     getters: { [key: string]: string[] };
   } = {
-    action: {},
-    getters: {},
-  };
+      action: {},
+      getters: {},
+    };
 
   constructor({ data, actions, getters }: ContextObject<D, A, G>) {
     this.contextData = { ...data, ...actions, ...getters };
     this.previousData = cloneDeep(this.contextData);
     // ACTIONS
     Object.entries(actions).forEach(([actionName, action]) => {
-      this.actions[actionName] = (...p: any[]) => {
-        const callAction = action.bind(this.contextData)(...p);
-        this.updateData(actionName);
-        return callAction;
-      };
       const actionDependencies = getDependencies(
         action,
         "action",
         Object.keys(getters)
       );
       this.dependencies.action[actionName] = actionDependencies;
+
+      this.actions[actionName] = (...p: any[]) => {
+        const returnAction = action.bind(this.contextData)(...p);
+        this.updateData(actionName);
+        return returnAction;
+      };
     });
 
     // GETTERS
@@ -79,43 +84,82 @@ class ContextData<D, A extends Actions, G extends Getters> {
       // INIT OBSERVABLE
       this.observable[dataKey] = [];
     });
-
-    console.log(this);
   }
 
   private updateData(actionName: string) {
     let dataEqual = true;
 
-    this.dependencies.action[actionName].forEach((dep) => {
+    for (const dep of this.dependencies.action[actionName]) {
+      /* check if the action has mutated the data  */
+      if (!isEqual(this.contextData[dep], this.previousData[dep])) {
+        dataEqual = false;
+        this.previousData[dep] = cloneDeep(this.contextData[dep]);
+        // passare il valore aggiornato direttamente ai getters
+        this.observable[dep].forEach((update) =>
+          update(this.previousData[dep])
+        );
+      }
+    }
+
+    /* this.dependencies.action[actionName].forEach((dep) => {
       if (!isEqual(this.contextData[dep], this.previousData[dep])) {
         dataEqual = false;
         this.previousData[dep] = cloneDeep(this.contextData[dep]);
         // passare il valore aggiornato direttamente ai getters
         this.observable[dep].forEach((update) => update());
       }
-    });
+    }); */
     return !dataEqual;
   }
 
-  subscribe(getterName: string, callback: (...p: any[]) => void) {
+  subscribe(getterName: any, callback: (...p: any[]) => void) {
     this.dependencies.getters[getterName].forEach((dep) => {
-      this.observable[dep].push(callback);
+      const index = this.observable[dep].indexOf(callback);
+      if (index === -1) {
+        this.observable[dep].push(callback);
+      } else {
+        this.observable[dep].splice(index, 1, callback);
+      }
     });
   }
 
-  unsubscribe(getterName: string, callback: () => void) {
+  unsubscribe(getterName: any, callback: (...p: any[]) => void, log = false) {
     this.dependencies.getters[getterName].forEach((dep) => {
+      log && console.log(this.observable[dep]);
       const index = this.observable[dep].indexOf(callback);
-      this.observable[dep].slice(index, 1);
+      this.observable[dep].splice(index, 1);
+      log && console.log(this.observable[dep]);
     });
   }
+
+  updateSubscription(getterName: any, callback: (...p: any[]) => void) {
+    this.dependencies.getters[getterName].forEach((dep) => {
+      const index = this.observable[dep].indexOf(callback);
+      this.observable[dep].splice(index, 1, callback);
+    });
+  }
+
+  log(dev?: boolean, ...l: any[]) {
+    if (dev) console.log(...l);
+  }
+
+  initGetterState<T>(getters: any[]) {
+    const initState: { [key: string]: any } = {};
+    for (const getterName of getters) {
+      if (this.getters[getterName]) {
+        initState[getterName] = this.getters[getterName]();
+      }
+    }
+    return initState as T;
+  }
+
 }
 
 export function createStore<
-  S,
+  D,
   A extends Actions = Actions,
   G extends Getters = Getters
->(contextData: ContextObject<S, A, G>) {
+>(contextData: ContextObject<D, A, G>) {
   const _contextData = new ContextData(contextData);
 
   const StoreContext = createContext(_contextData);
@@ -126,102 +170,132 @@ export function createStore<
 
   const useActions = () => {
     const context = useContext(StoreContext);
-    return context.actions as ContextObject<S, A, G>["actions"];
+    return context.actions as ContextObject<D, A, G>["actions"];
   };
 
-  const useGetters = <T extends GettersKey<S, G>>(getters: T[]) => {
+  const useGetters = <T extends GettersKey<D, G>>(getters: T[]) => {
     const context = useContext(StoreContext);
-
-    const [, forceRender] = useReducer((x) => x + 1, 0);
 
     const _getters = [...getters] as const;
 
-    const getValues = () => {
-      const values = {} as { [K in keyof G]: ReturnGetterType<G[K]> } & {
-        [K in keyof S]: S[K];
-      };
-      getters.forEach((key) => {
-        const getterName = key as string;
-        if (context.getters[getterName])
-          values[key] = context.getters[getterName]();
-      });
-      return values;
+    type GetterState = { [K in keyof G]: ReturnGetterType<G[K]> } & {
+      [K in keyof D]: D[K];
+    };
+    const [stateValue, setValue] = useState<GetterState>(() =>
+      context.initGetterState(getters)
+    );
+
+    const updateFunc = (key: GettersKey<D, G>, newValue: any) => {
+      setValue((prev) => ({ ...prev, [key]: newValue }));
     };
 
-    const gettersValue = useRef(getValues());
-
-    const updateFunc = (key: GettersKey<S, G>) => {
-      const updatedValue = context.getters[key as string]();
-      gettersValue.current[key] = updatedValue;
-      forceRender();
-    };
+    const updateFunctions = useRef(
+      {} as { [K in GettersKey<D, G>]: (newValue: any) => void }
+    ).current;
 
     useEffect(() => {
       getters.forEach((key) => {
-        const getterName = key as string;
-        context.subscribe(getterName, () => updateFunc(getterName));
+        updateFunctions[key] = (newValue: any) => updateFunc(key, newValue);
+        context.subscribe(key, updateFunctions[key]);
       });
       return () => {
         getters.forEach((key) => {
-          const getterName = key as string;
-          context.unsubscribe(getterName, () => updateFunc(getterName));
+          context.unsubscribe(key, updateFunctions[key]);
         });
       };
     }, []);
 
-    type TypeofGettersValue = typeof gettersValue.current;
+    type TypeofGettersValue = typeof stateValue;
     type GettersKeys = (typeof _getters)[number];
 
-    return gettersValue.current as {
+    return stateValue as {
       [K in GettersKeys]: TypeofGettersValue[K];
     };
   };
 
-  const useWatch = (
-    watchers: {
-      [K in keyof G]?: (newValue: ReturnGetterType<G[K]>) => void;
-    } & { [K in keyof S]?: (newValue: S[K]) => void }
-  ) => {
-    type Watchers = { [key: string]: (value?: any) => void };
+  type DataGettersObj = { [K in keyof G]: ReturnGetterType<G[K]> } & { [K in keyof D]: D[K] };
+  type Watchers = { [K in keyof DataGettersObj]?: (newValue: DataGettersObj[K]) => void }
 
+
+  /**
+   * 
+   * @param watchers is an object that allows you to perform 'side effects' in reaction to data/getters change.
+   * @param deps by default 'side effects' of watchers are state-less, `deps` recompute watchers after one of them changes.
+   * 
+   * @example
+   * 
+   * import { useState } from 'react';
+   * import { myStore } from './myStore';
+   * 
+   * export const MyComponent = () => {
+   *  const [state, setState] = useState();
+   *  myStore.useWatch({
+   *    storeKey(newValue) {
+   *      if (newValue === state) {
+   *        // you must add 'state' to the deps to recompute this function
+   *      }
+   *    }
+   *  }, [state] });
+   * 
+   * myStore.useWatch({
+   *    storeKey(newValue) {
+   *      if (newValue === 'some-value') {
+   *        // no need to add nothing to deps
+   *        setState(newValue);
+   *      }
+   *    }
+   *  }});
+   * 
+   *  return <div...
+   * };
+   */
+  const useWatch = (
+    watchers: Watchers,
+    deps: DependencyList | undefined = []
+  ) => {
     const context = useContext(StoreContext);
 
-    const data = useRef({
-      watchers: watchers as Watchers,
-      values: getPrevValues(),
-    }).current;
+    const __ = useRef({
+      init: false,
+      watchers,
+      callbacks: {} as { [key: string]: (newValue: any) => void }
+    });
 
-    function getPrevValues() {
-      const values: any = {};
+    const watcherFn = (key: string, val: any) => watchers[key]!(val);
+
+    const updateWatchers = useCallback(() => {
+      if (!__.current.init) return;
       Object.keys(watchers).forEach((key) => {
-        if (context.getters[key]) values[key] = context.getters[key]();
+        context.unsubscribe(key, __.current.callbacks[key]);
+        __.current.callbacks[key] = (newValue: any) => watcherFn(key, newValue);
+        context.subscribe(key, __.current.callbacks[key]);
       });
-      return values;
-    }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, deps);
 
-    const updateFunc = (key: string) => {
-      const newValue = context.getters[key]();
-      // RISCRIVERE QUESTA CONDIZIONE CHE MI CAUSA PROBLEMI CON GLI ARRAY
-      data.watchers[key](newValue);
-      data.values[key] = newValue;
-    };
+    useEffect(() => { updateWatchers() }, [updateWatchers])
 
     useEffect(() => {
-      if (!isEqual(data.watchers, watchers)) {
-        data.watchers = watchers as Watchers;
-      }
-    }, [watchers]);
 
-    useEffect(() => {
-      Object.keys(data.watchers).forEach((key) => {
-        context.subscribe(key, () => updateFunc(key));
+      const watchersKeys = Object.keys(__.current.watchers);
+      const ref = __.current;
+      watchersKeys.forEach((key) => {
+
+        __.current.callbacks[key] = (newValue: any) => watcherFn(key, newValue);
+        context.subscribe(key, __.current.callbacks[key]);
+
       });
+      __.current.init = true;
       return () => {
-        Object.keys(data.watchers).forEach((key) => {
-          context.unsubscribe(key, () => updateFunc(key));
+        watchersKeys.forEach((key) => {
+
+          context.unsubscribe(key, ref.callbacks[key]);
         });
       };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-  };
+
+  }
+
   return { Provider: StoreProvider, useActions, useGetters, useWatch };
 }

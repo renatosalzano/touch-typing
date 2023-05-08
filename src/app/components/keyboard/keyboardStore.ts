@@ -88,7 +88,7 @@ export const keyboardStore = createStore({
   },
   getters: {
     test() {
-      return "test";
+      return "test" as const;
     },
     getKeyboardKeys() {
       return this.keyboardKeys;

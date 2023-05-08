@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWindowResize } from "../../hooks/useWindowResize";
 import { CommonKey } from "./keys/CommonKey";
 import { EnterKey } from "./keys/EnterKey";
@@ -16,6 +16,7 @@ export const Keyboard: FC = () => {
     "standard",
     "getKeyboardKeys",
   ]);
+
 
   useKeyboard();
 
@@ -53,6 +54,8 @@ export const Keyboard: FC = () => {
     </div>
   );
 };
+
+
 
 const KeyboardKey: FC<{
   _key: string;

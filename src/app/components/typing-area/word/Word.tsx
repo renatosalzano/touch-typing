@@ -16,7 +16,7 @@ export const Letter: FC<{
     correct: false,
     error: false,
   });
-  typingStore.useWatch({
+  /* typingStore.useWatch({
     index(newIndex) {
       if (newIndex === letterCount) {
         setState((prev) => ({ ...prev, correct: true }));
@@ -28,7 +28,7 @@ export const Letter: FC<{
         setState((prev) => ({ ...prev, error: true }));
       }
     },
-  });
+  }); */
 
   return <span {...useClassName("letter", { correct, error })}>{letter}</span>;
 };
