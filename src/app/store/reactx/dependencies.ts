@@ -19,6 +19,8 @@ export const getDependencies = (
   const dependencies: string[] = [];
   const funcBody = parseFunction(func);
 
+  /* type === 'getter' && console.log(funcBody) */
+
   const match = funcBody.match(
     type === "action" ? MATCH_ASSIGNAMENT_OPERATOR : MATCH_THIS
   );
@@ -37,7 +39,6 @@ export const getDependencies = (
       }
     });
   }
-  /* console.log(dependencies); */
 
   return dependencies;
 };

@@ -1,17 +1,23 @@
 import { ChangeEvent, FC, ReactNode, useMemo, useRef } from "react";
 import { typingStore } from "../../store/typingStore";
 import { Letter, Word } from "./word/Word";
-import "./TypingArea.scss";
 import { useClassName } from "../../hooks/useClassName";
+import "./TypingArea.scss";
 
 const loremIpsum =
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec risus ac tortor placerat vulputate eu eu elit.";
 
 export const TypingArea: FC = () => {
+
+  const { setTyping } = typingStore.useActions()
   const { getWords, currentWords } = typingStore.useGetters([
     "getWords",
     "currentWords",
   ]);
+
+  const startTyping = () => {
+    setTyping(true);
+  }
 
   const words = useMemo(() => {
     const output: { letter: string; letterCount: number }[][] = [];
@@ -29,7 +35,7 @@ export const TypingArea: FC = () => {
   }, [currentWords]);
 
   return (
-    <div className="typing-area-container">
+    <div className="typing-area-container" onClick={startTyping}>
       <InputTyping />
       <div className="word-wrapper">
         <Caret />
@@ -53,6 +59,9 @@ export const TypingArea: FC = () => {
 
 const InputTyping: FC = () => {
   const { setInputValue } = typingStore.useActions();
+  const { isTyping } = typingStore.useGetters([
+    "isTyping",
+  ]);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputValue = useRef("");
 

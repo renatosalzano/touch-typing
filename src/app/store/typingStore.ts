@@ -1,5 +1,5 @@
 import { ChangeEvent } from "react";
-import { createStore } from "./react-store/react-store";
+import { createStore } from "./reactx/createStore";
 
 export const typingStore = createStore({
   data: {
@@ -11,6 +11,9 @@ export const typingStore = createStore({
     index: 0,
   },
   actions: {
+    newAction: {
+      action() { }
+    },
     setTyping(bool: boolean) {
       this.isTyping = bool;
     },

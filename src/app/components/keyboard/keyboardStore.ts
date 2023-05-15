@@ -1,6 +1,6 @@
 import { Key } from "../../classes/Key";
 import { layouts } from "../../keyboard-layouts/layouts";
-import { createStore } from "../../store/react-store/react-store";
+import { createStore } from "../../store/reactx/createStore";
 
 type KeyPressed = { [key: string]: boolean };
 
@@ -60,9 +60,11 @@ export const keyboardStore = createStore({
       if (bool !== undefined) this.fingerPlacement = bool;
       else this.fingerPlacement = !this.fingerPlacement;
     },
-    setShowKeyboardSettings(bool?: boolean) {
-      if (bool !== undefined) this.showKeyboardSettings = bool;
-      else this.showKeyboardSettings = !this.showKeyboardSettings;
+    setShowKeyboardSettings: {
+      action(bool?: boolean) {
+        if (bool !== undefined) this.showKeyboardSettings = bool;
+        else this.showKeyboardSettings = !this.showKeyboardSettings;
+      }
     },
 
     handleKey(event: KeyboardEvent, keydown: boolean) {
